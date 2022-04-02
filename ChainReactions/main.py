@@ -1,3 +1,38 @@
+class Permutator():
+    def __init__(self, modules, maxValidResult, nums):
+        self.modules = modules
+        self.maxValidResult = maxValidResult
+        self.result = 0
+        self.permute_util(nums,0,[])
+
+    def permute_util(self,given_list,start,curr):
+        if start > len(given_list)-1:
+            self.searchMaxValue(curr)
+            return
+        for i in range(start,len(given_list)):
+            if self.result != self.maxValidResult:
+                self.swap(given_list,start,start+(i-start)) 
+                self.permute_util(given_list,start+1,curr+[given_list[start]])
+                self.swap(given_list, start, start + (i - start))
+            else:
+                break
+
+    def swap(self,nums,index1,index2):
+        temp = nums[index1]
+        nums[index1] = nums[index2]
+        nums[index2] = temp
+
+    def searchMaxValue(self, order):
+        acum = 0
+        _modules = copyModules(self.modules)
+        for i in order:
+            acum += getMaxFunOfChain(_modules, i)
+        if acum > self.result:
+            self.result = acum
+    
+    def getResult(self):
+        return self.result
+
 def module( fun, nextModule):
     return {
         "fun": fun,
@@ -12,7 +47,7 @@ def main():
         modulesAmount = int(input())
         modulesFun = input().split(" ")
         modulesPointer = input().split(" ")
-        _modules = []
+        modules = []
         values = []
         initiatorModules = []
         
@@ -20,47 +55,42 @@ def main():
             modulePointer = int(modulesPointer[i])-1
             fun = int(modulesFun[i])
             values.append(fun)
-            _modules.append(module(fun, modulePointer))
+            modules.append(module(fun, modulePointer))
 
         for i in range(modulesAmount):
             isActivator = True
             for j in range(modulesAmount):
-                if _modules[j]['nextModule'] == i:
+                if modules[j]['nextModule'] == i:
                     isActivator = False
             
             if isActivator:
                 initiatorModules.append(i)
 
         maxValidResult = maxTheorical(values, len(initiatorModules))
-        validResult = 0
 
-        for i in range(len(initiatorModules)):
-            _initiatorModules = initiatorModules.copy()
-            _initiatorModules.pop(i)
-            calculatedFun = getMaxFun(copyModules(_modules), _initiatorModules, initiatorModules[i])
-            if calculatedFun > validResult:
-                validResult = calculatedFun
-                if calculatedFun == maxValidResult:
-                    break
+        permutator = Permutator(modules, maxValidResult, initiatorModules)
+
+        validResult = permutator.getResult()
+        
+
+        #for i in range(len(initiatorModules)):
+        #    _initiatorModules = initiatorModules.copy()
+        #    _initiatorModules.pop(i)
+        #    calculatedFun = getMaxFunOfChain(copyModules(_modules), initiatorModules[i])
+        #    if calculatedFun > validResult:
+        #        validResult = calculatedFun
+        #        if calculatedFun == maxValidResult:
+        #            break
         
         print("Case #" + str(case) + ": " + str(validResult))
 
-def getMaxFun(modules, initiators, position):
+def getMaxFunOfChain(modules, position):
     if modules[position]['nextModule'] == -1 or modules[modules[position]['nextModule']]['activated']:
-        if len(initiators) == 0:
-            modules[position]['activated'] = True
-            return modules[position]['fun']
-        else:
-            modules[position]['activated'] = True
-            values = []
-            for i in range(len(initiators)):
-                _initiators = initiators.copy()
-                _initiators.pop(i)
-                values.append(getMaxFun(copyModules(modules), _initiators, initiators[i]))
-            return max(values) + modules[position]['fun']
+        modules[position]['activated'] = True
+        return modules[position]['fun']
     else:
         modules[position]['activated'] = True
-        return max(getMaxFun(modules, initiators, modules[position]['nextModule']), modules[position]['fun'])
+        return max(getMaxFunOfChain(modules, modules[position]['nextModule']), modules[position]['fun'])
     
 def copyModules(modules):
     _modules = []
